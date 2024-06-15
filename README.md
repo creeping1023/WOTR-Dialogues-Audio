@@ -1,0 +1,1 @@
+Dialogue sound files of [Pathfinder: Wrath of the Righteous](https://store.steampowered.com/app/1184370/Pathfinder_Wrath_of_the_Righteous__Enhanced_Edition/) extracted from `\Wrath_Data\StreamingAssets\Audio\GeneratedSoundBanks\Windows\Packages\`
