@@ -93,7 +93,7 @@ def unpack_wav(pck_name: str):
             full_path = info.find(f".//StreamedFiles/File[@Id='{wem_id}']/ShortName").text
             wav_name = os.path.basename(full_path)
         except:
-            raise Exception(wem_id)
+            wav_name = wem_id
         if wav_name in info_count:
             info_count[wav_name] += 1
             wav_path = os.path.join(WAV_DIR, wav_name)
