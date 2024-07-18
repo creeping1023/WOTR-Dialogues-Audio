@@ -18,12 +18,14 @@ import xml.etree.ElementTree as ET
 info = ET.parse(SRC_INFO_PATH).getroot()
 
 # %%
+# 台词和Event之间的映射关系（一对一）
 import json
 EVENT_MAP_FILE = 'F:\\SteamLibrary\\steamapps\\common\\Pathfinder Second Adventure\\Wrath_Data\\StreamingAssets\\Localization\\Sound.json'
 with open(EVENT_MAP_FILE, 'r') as f:
     event_data = json.load(f)
 
 # %%
+# Event和音频文件之间的映射关系（可能一对多）
 event_to_files = {}
 for node in info.findall(".//Event"):
     event_name = node.get('Name')
@@ -32,7 +34,8 @@ for node in info.findall(".//Event"):
         event_to_files[event_name] += files
     else:
         event_to_files[event_name] = files
-        
+
+# 所有与Sound.json有关联的音频文件名，可以过滤掉一些不知道用在哪里的音频
 info_count = {}
 for event in event_data['strings'].values():
     if event in event_to_files:
@@ -59,7 +62,8 @@ def unpack_wav(pck_name: str):
     pck_path = os.path.join(SRC_DIR, pck_name)
     if not os.path.isfile(pck_path):
         raise FileNotFoundError(pck_path)
-    
+
+    # 解包pck文件，包含bnk和wem文件
     print(f"Unpacking...", end="")
     clean_or_create_dir(TMP_DIR)
     run_command([
@@ -76,6 +80,7 @@ def unpack_wav(pck_name: str):
     clean_or_create_dir(WEM_DIR)
     for wem in wem_list:
         shutil.move(os.path.join(TMP_DIR, wem), os.path.join(WEM_DIR, wem))
+    # bnk文件是另一种压缩包，里面的音频似乎用不上
     clean_or_create_dir(BNK_DIR)
     for bnk in bnk_list:
         shutil.move(os.path.join(TMP_DIR, bnk), os.path.join(BNK_DIR, bnk))
@@ -90,12 +95,14 @@ def unpack_wav(pck_name: str):
         wem_path = os.path.join(WEM_DIR, wem)
         wem_id = wem.replace('.wem', '')
         try:
+            # 通过查找SoundbanksInfo.xml中的File节点，由wem文件的id获取文件名
             full_path = info.find(f".//StreamedFiles/File[@Id='{wem_id}']/ShortName").text
             wav_name = os.path.basename(full_path)
         except:
             wav_name = wem_id
         if wav_name in info_count:
             info_count[wav_name] += 1
+            # 将wem转换为wav格式
             wav_path = os.path.join(WAV_DIR, wav_name)
             run_command([
                 "Tools/vgmstream-cli.exe",
@@ -104,6 +111,7 @@ def unpack_wav(pck_name: str):
                 wem_path
             ])
         else:
+            # 记录找不到关联的文件
             if wav_name not in skipped:
                 skipped[wav_name] = 0
             skipped[wav_name] += 1
@@ -112,6 +120,7 @@ def unpack_wav(pck_name: str):
         print(f"\rConvert wem to wav {wem_count}/{wem_total}, {wem_skip_count} skipped", end='')
     print('')
 
+    # 由于GitHub库容量限制1GB，需要压缩文件大小，因此转为aac格式
     wav_list = os.listdir(WAV_DIR)
     wav_total = len(wav_list)
     if wav_total == 0:
